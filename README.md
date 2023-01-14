@@ -1,4 +1,5 @@
-<div align="left"><img src="image/asr_u_arch.drawio.png" width="600"/></div>
+# Experiment code for a theory of unsupervised speech recognition
+<div align="middle"><img src="image/asr_u_arch.drawio.png" width="600"/></div>
 This repository contains the source code for the paper "A Theory of Unsupervised Speech Recognition".
 
 ### Dependencies

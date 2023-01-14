@@ -1,0 +1,123 @@
+# @package _group_
+
+common:
+  fp16: false
+  fp16_no_flatten_grads: true
+  log_format: json
+  log_interval: 10
+  tensorboard_logdir: ../0/tb
+  reset_logging: true
+  suppress_crashes: false
+
+checkpoint:
+  save_interval: 50
+  save_interval_updates: 50
+  no_epoch_checkpoints: true
+  best_checkpoint_metric: uer
+  save_dir: .
+
+distributed_training:
+  distributed_world_size: 1
+
+task:
+  _name: unpaired_audio_text
+  data: ???
+  text_data: ???
+  shuffle: False
+  labels: phn
+  sort_by_length: false
+  unfiltered: false
+  random_choice: false
+  max_length: null
+  append_eos: false
+  kenlm_path: ???
+
+dataset:
+  num_workers: 6
+  batch_size: 2560
+  skip_invalid_size_inputs_valid_test: true
+  valid_subset: valid
+  validate_interval: 10
+  validate_interval_updates: 100
+
+criterion:
+  _name: model
+  log_keys:
+    - accuracy_dense
+    - accuracy_token
+    - temp
+    - code_ppl
+
+optimization:
+  max_update: 2000
+  clip_norm: 10000.0
+  lr: [0]
+
+optimizer:
+  _name: composite
+  groups:
+    generator:
+      lr: [0.004]
+      lr_float: null
+      optimizer:
+        _name: adam
+        adam_betas: [0.5,0.98]
+        adam_eps: 1e-06
+        weight_decay: 0
+      lr_scheduler:
+        _name: fixed
+        warmup_updates: 0
+    discriminator:
+      lr: [ 1.0 ]
+      lr_float: null
+      optimizer:
+        _name: sgd
+        momentum: 0
+        weight_decay: 0
+      lr_scheduler:
+        _name: fixed
+        warmup_updates: 0
+
+lr_scheduler: pass_through
+
+model:
+  _name: wav2vec_u
+
+  discriminator_dim: 160
+  discriminator_depth: 1
+  discriminator_kernel: 13 
+  discriminator_linear_emb: false
+  discriminator_causal: false
+  discriminator_max_pool: false
+  discriminator_act_after_linear: false
+  discriminator_dropout: 0.0
+  discriminator_weight_norm: false
+
+  generator_stride: 1
+  generator_kernel: 1
+  generator_bias: false
+  generator_dropout: 0.0
+
+  no_special_tokens: True
+  no_silence: True
+  no_softmax: False
+  generator_type: "average"
+  discriminator_type: "linear"
+  gan_type: mmd
+  switch_frequency: 2
+  reset_discriminator_every_update: True
+
+  smoothness_weight: 0.75
+  smoothing: 0
+  smoothing_one_sided: false
+  gumbel: false
+  hard_gumbel: false
+  gradient_penalty: 1.5
+  code_penalty: 4.0
+  temp: [ 2,0.1,0.99995 ]
+  input_dim: 8
+
+  segmentation:
+    type: NONE
+    mean_pool_join: false
+    remove_zeros: false

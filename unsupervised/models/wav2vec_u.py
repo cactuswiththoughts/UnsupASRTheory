@@ -67,7 +67,6 @@ class Wav2vec_UConfig(FairseqDataclass):
     blank_is_sil: bool = False
     no_softmax: bool = False
 
-    # XXX By Liming
     no_special_tokens: bool = False
     no_silence: bool = False
     discriminator_type: str = "cnn"  # choices={"perfect", "cnn", "linear"}
@@ -507,7 +506,7 @@ class Wav2vec_U(BaseFairseqModel):
         self.blank_mode = cfg.blank_mode
         self.blank_index = target_dict.index("<SIL>") if cfg.blank_is_sil else 0
         assert self.blank_index != target_dict.unk()
-        # XXX By Liming
+
         self.nspecial = target_dict.nspecial
         self.no_special_tokens = cfg.no_special_tokens
         self.no_silence = cfg.no_silence
@@ -657,7 +656,6 @@ class Wav2vec_U(BaseFairseqModel):
         code_perplexity = None
 
         if not (self.no_softmax and dense_x_only):
-            # XXX By Liming
             if self.no_softmax:
                 if self.no_special_tokens:
                     dense_x[..., :self.nspecial] = 0.0
@@ -669,7 +667,7 @@ class Wav2vec_U(BaseFairseqModel):
                 if self.no_silence:
                     dense_x[..., self.zero_index] = -1e14
                 dense_x, code_perplexity, prob_perplexity = self.normalize(dense_logits)
-        
+
         if dense_x_only or self.discriminator is None:
             return {
                 "logits": dense_x,
@@ -697,22 +695,15 @@ class Wav2vec_U(BaseFairseqModel):
 
         if self.generator_type == "average":
             # pdb.set_trace()
-            # XXX By Liming: compute average probs
+            # Compute average probs
             avg_token_x = token_x.mean(dim=0, keepdim=True)
+            avg_dense_logits = dense_logits.mean(dim=0, keepdim=True)
+            avg_dense_x = dense_x.mean(dim=0, keepdim=True)
             avg_token_padding_mask = token_padding_mask.prod(dim=0, keepdim=True)
-            avg_features = features.mean(dim=0, keepdim=True)
             avg_dense_padding_mask = padding_mask.prod(dim=0, keepdim=True)
-             
-            avg_gen_result = self.generator(
-                avg_features, 
-                random_label, 
-                avg_dense_padding_mask,
-            )
-            avg_dense_logits = avg_gen_result["dense_x"]
-            
-            # XXX By Liming: use perfect discriminator (KLD or JSD)
-            if self.discriminator_type == "perfect": 
-                avg_dense_x = F.relu(avg_dense_logits)
+
+            # Use perfect discriminator (KLD or JSD)
+            if self.discriminator_type == "perfect":
                 avg_dense_and_token_x = (avg_dense_x + avg_token_x) / 2.
                 avg_dense_and_token_logits = torch.maximum(
                     avg_dense_and_token_x, 
@@ -738,13 +729,13 @@ class Wav2vec_U(BaseFairseqModel):
                     )
                 elif self.gan_type == "l1":
                     loss = F.l1_loss(
-                        avg_dense_logits, 
+                        avg_dense_x, 
                         avg_token_x,
                         reduction="none",
                     ).mean(0).sum()
                 elif self.gan_type == "mse":
                     loss = F.mse_loss(
-                        avg_dense_logits, 
+                        avg_dense_x, 
                         avg_token_x,
                         reduction="sum",
                     ).mean(0).sum()
@@ -773,10 +764,10 @@ class Wav2vec_U(BaseFairseqModel):
                 }
                 return result
             else:
-                # if self.gan_type in ["mmd", "wasserstein", "least_square"]:
+#                if self.gan_type in ["mmd", "wasserstein", "least_square"]:
                 avg_dense_x = self.normalize(avg_dense_logits)[0]
-                # else:
-                #     avg_dense_x = avg_dense_logits
+#                else:
+#                    avg_dense_x = avg_dense_logits
                 dense_y = self.discriminator(avg_dense_x, avg_dense_padding_mask)
                 token_y = self.discriminator(avg_token_x, avg_token_padding_mask)
                 sample_size = 1
@@ -826,7 +817,6 @@ class Wav2vec_U(BaseFairseqModel):
         code_pen = None
 
         if d_step:
-            # XXX By Liming
             if self.generator_type == "unigram_average":
                 loss_dense = torch.mean(dense_y) * sample_size
                 loss_token = torch.mean(token_y) * sample_size

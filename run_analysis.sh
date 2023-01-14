@@ -4,6 +4,9 @@ gan_type=$1
 graph_type=$2
 gen_type=$3  # {"unigram_avg", "cnn"}
 discrim_type=$4  # {"mlp", "cnn", "linear"}
+stage=$5
+stop_stage=$6
+
 if [ -z $gen_type ]; then
     gen_type="unigram_avg"
 fi
@@ -12,6 +15,10 @@ if [ -z $discrim_type ]; then
 fi
 if [ $gan_type = l1 ]; then 
     discrim_type=perfect
+fi
+if [ -z $stage ]; then
+    stage=0
+    stop_stage=100
 fi
 
 function error
@@ -38,7 +45,7 @@ conda activate fairseq
 
 root=$(pwd)
 checkpoint_root=${root}/multirun
-gpu_num=3
+gpu_num=0
 export root
 export checkpoint_root
 export FAIRSEQ_ROOT
@@ -55,8 +62,6 @@ graph_type=${graph_name}__nx_${nx}_n_2
 level=3
 bsz=2560
 
-stage=2
-stop_stage=2
 if [ $stage -le 1 ] && [ $stop_stage -ge 1 ]; then
     n=51200
     #in_path=$root/manifest/phase_transition_${graph_name}/${graph_type}_Nx_${n}_level_${level} 
@@ -245,36 +250,4 @@ if [ $stage -le 6 ] && [ $stop_stage -ge 6 ]; then
             hydra.run.dir=${checkpoint_dir} \
             hydra.sweep.dir=${checkpoint_dir}
     done
-fi
-
-# GAN training with an imperfect discriminator
-if [ $stage -le 20 ] && [ $stop_stage -ge 20 ]; then
-    PREFIX=w2v_unsup_gan_xp
-    l=${level}
-    tgt_dir=manifest/phase_transition_${graph_name}/${graph_type}_Nx_2560_level_${l}
-    checkpoint_dir=${checkpoint_root}/${graph_type}_Nx_2560_level_${l}_gan_type_${gan_type}_bsz$bsz
-    TASK_DATA=$root/$tgt_dir
-    TEXT_DATA=$root/$tgt_dir/phones  # path to fairseq-preprocessed GAN data (phones dir)
-    KENLM_PATH=$root/$tgt_dir/phones/lm.phones.filtered.02.bin #kenlm.phn.o4.bin  # KenLM bi-gram phoneme language model (LM data = GAN data here)
-    if [ $graph_name = "debruijn" ]; then
-        config_name=w2vu_synthetic_${gan_type}_gan_linear_discrim_switch_freq2_bsz${bsz}_l80
-    elif [ $graph_name = "hypercube" ]; then
-        config_name=w2vu_synthetic_${gan_type}_gan_linear_discrim_switch_freq2_bsz${bsz}_nx8
-    else
-        config_name=w2vu_synthetic_${gan_type}_gan_linear_discrim_switch_freq2_bsz${bsz}
-    fi
-    echo ${config_name}
-
-    CUDA_VISIBLE_DEVICES=${gpu_num} PYTHONPATH=$FAIRSEQ_ROOT PREFIX=$PREFIX fairseq-hydra-train \
-        -m --config-dir config/gan \
-        --config-name ${config_name} \
-        task.data=${TASK_DATA} \
-        task.text_data=${TEXT_DATA} \
-        task.kenlm_path=${KENLM_PATH} \
-        common.user_dir=$(pwd)/unsupervised \
-        model.code_penalty=0.0 model.gradient_penalty=0.0 \
-        model.smoothness_weight=0.0 'common.seed=range(0,1)' \
-        checkpoint.save_dir=${checkpoint_dir} \
-        hydra.run.dir=${checkpoint_dir} \
-        hydra.sweep.dir=${checkpoint_dir}
 fi

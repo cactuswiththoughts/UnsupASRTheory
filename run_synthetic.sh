@@ -54,8 +54,8 @@ export FAIRSEQ_ROOT
 export KALDI_ROOT
 export KENLM_ROOT
 
-stage=2
-stop_stage=2
+stage=0
+stop_stage=100
 if [ $stage -le 1 ] && [ $stop_stage -ge 1 ]; then
     for level in 0; do
         for n in 2560; do

@@ -1,4 +1,4 @@
-# Experiment code for a theory of unsupervised speech recognition
+# Experiment Code for a Theory of Unsupervised Speech Recognition 
 <div align="middle"><img src="image/asr_u_arch.drawio.png" width="600"/></div>
 This repository contains the source code for the paper "A Theory of Unsupervised Speech Recognition".
 
@@ -9,7 +9,7 @@ This repository contains the source code for the paper "A Theory of Unsupervised
 0. Change ```$CONDA_ROOT```, ```$FAIRSEQ_ROOT```, ```$KALDI_ROOT``` and ```$KENLM_ROOT``` in ```run_{synthetic, analysis}.sh``` to those of your own.
 
 1. For phase transition experiments:
-```bash run_synthetic.sh ${gan_type} ${graph_name}```
+```bash run_synthetic.sh ${l1,mmd,jsd,wasserstein} ${circulant,debruijn,hypercube}```
 
 2. For further analysis such as the effect of training with discriminator reset, discriminator type and generator type:
 ```

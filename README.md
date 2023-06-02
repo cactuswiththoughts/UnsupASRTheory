@@ -1,6 +1,6 @@
 # Experiment Code for a Theory of Unsupervised Speech Recognition 
 <div align="middle"><img src="image/asr_u_arch.drawio.png" width="600"/></div>
-This repository contains the source code for the paper "[A Theory of Unsupervised Speech Recognition](https://www.researchgate.net/publication/370605684_A_Theory_of_Unsupervised_Speech_Recognition)".
+This repository contains the source code for the [paper](https://www.researchgate.net/publication/370605684_A_Theory_of_Unsupervised_Speech_Recognition) "A Theory of Unsupervised Speech Recognition".
 
 ### Dependencies
 - [fairseq](https://github.com/pytorch/fairseq) >= 1.0.0 with dependencies for [wav2vec-u](https://github.com/pytorch/fairseq/tree/main/examples/wav2vec/unsupervised)
